@@ -31,23 +31,26 @@ type Particle = { id: number; x: number; emoji: string };
 export default function PetInteraction({ pet, care }: Props) {
   const [bubble, setBubble] = useState(() => getIdleMessage(pet));
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [loadingKey, setLoadingKey] = useState<keyof Props["care"] | null>(null);
+  const [, startTransition] = useTransition();
 
-  function handleCare(action: CareAction, itemId: string) {
+  function handleCare(key: keyof Props["care"], action: CareAction, itemId: string) {
+    if (loadingKey) return;
+    setLoadingKey(key);
     setBubble(getActionMessage(action));
     startTransition(async () => {
       try {
         await useCareItem(itemId);
-        setTimeout(() => setBubble(getIdleMessage(pet)), 2500);
       } catch (e) {
         setBubble(e instanceof Error ? e.message : "오류가 발생했어요");
-        setTimeout(() => setBubble(getIdleMessage(pet)), 2500);
+      } finally {
+        setLoadingKey(null);
+        setTimeout(() => setBubble(getIdleMessage(pet)), 1500);
       }
     });
   }
 
   function handlePetTap() {
-    if (isPending) return;
     setBubble(getTapMessage(pet));
 
     const pool = TAP_EMOJIS[pet.stage];
@@ -99,18 +102,22 @@ export default function PetInteraction({ pet, care }: Props) {
       <div className="flex gap-3 w-full">
         {BUTTONS.map(({ key, action, label, emoji, color }) => {
           const item = care[key];
-          const canUse = !!item && item.count > 0 && !isPending;
+          const isThis = loadingKey === key;
+          const canUse = !!item && item.count > 0 && !loadingKey;
           return (
             <button
               key={key}
-              onClick={() => item && handleCare(action, item.itemId)}
-              disabled={!canUse}
+              onClick={() => item && handleCare(key, action, item.itemId)}
+              disabled={!canUse && !isThis}
               className="flex-1 flex flex-col items-center gap-1.5 bg-[var(--color-card)] pixel-border rounded-2xl py-3.5 transition-all active:scale-95 disabled:opacity-40"
+              style={{ touchAction: "manipulation" }}
             >
-              <span className="text-2xl leading-none">{emoji}</span>
+              <span className="text-2xl leading-none" style={isThis ? { animation: "glowPulse 0.6s ease-in-out infinite" } : undefined}>
+                {emoji}
+              </span>
               <span className="text-xs font-extrabold" style={{ color }}>{label}</span>
               <span className="text-[10px] text-[var(--color-muted)]">
-                {item && item.count > 0 ? `${item.count}개` : "없음"}
+                {isThis ? "..." : item && item.count > 0 ? `${item.count}개` : "없음"}
               </span>
             </button>
           );
