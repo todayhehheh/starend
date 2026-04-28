@@ -229,6 +229,16 @@ export async function approveQuestCompletion(missionLogId: string, participantId
   revalidatePath(`/admin/participants/${participantId}`);
 }
 
+export async function toggleIsolation(userId: string, isIsolated: boolean) {
+  await assertManager();
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({ is_isolated: isIsolated })
+    .eq("id", userId);
+  if (error) throw new Error("격리 설정에 실패했어요");
+  revalidatePath(`/admin/participants/${userId}`);
+}
+
 export async function updateFeedContent(logId: string, content: string) {
   await assertManager();
   const { error } = await supabaseAdmin

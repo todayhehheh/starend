@@ -8,7 +8,7 @@ import MissionFormModal from "@/components/admin/MissionFormModal";
 import ToggleMissionButton from "@/components/admin/ToggleMissionButton";
 import DeleteMissionButton from "@/components/admin/DeleteMissionButton";
 import { kstDateStr } from "@/lib/date";
-import { resetParticipantPassword, updateParticipantUsername, approveQuestCompletion } from "@/lib/adminActions";
+import { resetParticipantPassword, updateParticipantUsername, approveQuestCompletion, toggleIsolation } from "@/lib/adminActions";
 import type { Mission, Profile, Pet } from "@/types";
 
 const MOOD_EMOJI = ["", "😭", "😔", "😐", "🙂", "😄"];
@@ -47,7 +47,7 @@ export default function ParticipantDetailPage() {
   const params = useParams();
   const participantId = params.id as string;
 
-  const [profile, setProfile] = useState<Pick<Profile, "nickname" | "coins"> | null>(null);
+  const [profile, setProfile] = useState<Pick<Profile, "nickname" | "coins" | "is_isolated"> | null>(null);
   const [pet, setPet] = useState<Pet | null>(null);
   const [loginInfo, setLoginInfo] = useState<LoginInfo | null>(null);
   const [personalMissions, setPersonalMissions] = useState<Mission[]>([]);
@@ -84,7 +84,7 @@ export default function ParticipantDetailPage() {
       { data: photoData },
       { data: pendingData },
     ] = await Promise.all([
-      supabase.from("profiles").select("nickname, coins").eq("id", participantId).single(),
+      supabase.from("profiles").select("nickname, coins, is_isolated").eq("id", participantId).single(),
       supabase.from("pets").select("*").eq("user_id", participantId).single(),
       supabase.from("participant_logins").select("username, auth_email").eq("user_id", participantId).single(),
       supabase.from("missions").select("*").eq("assigned_to", participantId).order("created_at", { ascending: false }),
@@ -106,7 +106,7 @@ export default function ParticipantDetailPage() {
         .is("approved_at", null),
     ]);
 
-    setProfile(profileData as Pick<Profile, "nickname" | "coins"> | null);
+    setProfile(profileData as Pick<Profile, "nickname" | "coins" | "is_isolated"> | null);
     setPet(petData as Pet | null);
     setLoginInfo(loginData as LoginInfo | null);
     setPersonalMissions((missionData ?? []) as Mission[]);
@@ -136,6 +136,14 @@ export default function ParticipantDetailPage() {
   function handleApprove(logId: string) {
     startApproveTransition(async () => {
       await approveQuestCompletion(logId, participantId);
+      load();
+    });
+  }
+
+  function handleToggleIsolation() {
+    const next = !(profile?.is_isolated ?? false);
+    startTransition(async () => {
+      await toggleIsolation(participantId, next);
       load();
     });
   }
@@ -196,6 +204,19 @@ export default function ParticipantDetailPage() {
         <Link href="/admin" className="text-sm text-[var(--color-muted)]">← 뒤로</Link>
         <span className="text-base font-extrabold">{profile?.nickname ?? "..."}</span>
         {profile && <span className="text-xs text-[var(--color-muted)]">🪙 {profile.coins}</span>}
+        <div className="ml-auto">
+          <button
+            onClick={handleToggleIsolation}
+            disabled={isPending || !profile}
+            className={`text-xs font-extrabold px-3 py-1.5 rounded-xl border-2 btn-pixel disabled:opacity-50 ${
+              profile?.is_isolated
+                ? "bg-red-50 border-red-300 text-red-600"
+                : "bg-gray-50 border-gray-300 text-gray-500"
+            }`}
+          >
+            {profile?.is_isolated ? "🔴 격리 중" : "격리"}
+          </button>
+        </div>
       </div>
 
       {/* 계정 정보 */}

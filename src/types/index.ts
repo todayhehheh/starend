@@ -7,6 +7,7 @@ export interface Profile {
   nickname: string;
   role: UserRole;
   coins: number;
+  is_isolated: boolean;
   created_at: string;
 }
 
@@ -55,6 +56,7 @@ export interface MissionLog {
   emoji: string;
   coins_earned: number;
   photo_url: string | null;
+  is_private: boolean;
   approved_at: string | null;
   approved_by: string | null;
   created_at: string;
@@ -69,7 +71,8 @@ export interface FeedLog {
   coins_earned: number;
   created_at: string;
   user_id: string;
-  profiles: Pick<Profile, "nickname"> | null;
+  is_private: boolean;
+  profiles: Pick<Profile, "nickname" | "role" | "is_isolated"> | null;
   missions: Pick<Mission, "title" | "emoji"> | null;
   reactions: Array<Pick<Reaction, "id" | "user_id" | "type">>;
 }

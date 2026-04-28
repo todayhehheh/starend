@@ -10,6 +10,7 @@ export async function completeMission(
   content: string,
   coinsEarned: number,
   photoUrl?: string,
+  isPrivate?: boolean,
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -22,6 +23,7 @@ export async function completeMission(
     emoji:        "📸",
     coins_earned: coinsEarned,
     photo_url:    photoUrl ?? null,
+    is_private:   isPrivate ?? false,
   });
 
   if (error) {

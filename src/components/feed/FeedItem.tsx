@@ -89,8 +89,15 @@ export default function FeedItem({ log, currentUserId, isManager }: Props) {
           <p className="text-sm font-extrabold truncate">{log.profiles?.nickname ?? "익명"}</p>
           <p className="text-[10px] text-[var(--color-muted)]">{formatTimeAgo(log.created_at)}</p>
         </div>
-        <div className="text-xs bg-purple-50 text-[var(--color-primary)] font-bold px-2.5 py-1 rounded-lg shrink-0 max-w-[120px] truncate">
-          {log.missions?.emoji} {log.missions?.title}
+        <div className="flex items-center gap-1 shrink-0">
+          {log.is_private && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 border border-gray-200">
+              🔒
+            </span>
+          )}
+          <div className="text-xs bg-purple-50 text-[var(--color-primary)] font-bold px-2.5 py-1 rounded-lg max-w-[120px] truncate">
+            {log.missions?.emoji} {log.missions?.title}
+          </div>
         </div>
         {isManager && (
           <div className="flex items-center gap-1.5 shrink-0 ml-1">

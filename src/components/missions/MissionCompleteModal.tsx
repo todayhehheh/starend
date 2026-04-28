@@ -18,6 +18,7 @@ export default function MissionCompleteModal({ mission, onClose, requiresApprova
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +58,7 @@ export default function MissionCompleteModal({ mission, onClose, requiresApprova
         if (requiresApproval) {
           await completeMissionWithApproval(mission.id, caption.trim(), mission.coins, publicUrl);
         } else {
-          await completeMission(mission.id, caption.trim(), mission.coins, publicUrl);
+          await completeMission(mission.id, caption.trim(), mission.coins, publicUrl, isPrivate);
         }
         setStep("success");
       } catch (err: unknown) {
@@ -159,8 +160,23 @@ export default function MissionCompleteModal({ mission, onClose, requiresApprova
                 placeholder="한 마디 남겨봐요 (선택)"
                 maxLength={60}
                 rows={2}
-                className="w-full border-2 border-[var(--color-border)] bg-[var(--color-card)] rounded-xl px-3 py-2.5 text-sm resize-none outline-none focus:border-[var(--color-primary)] transition-colors mb-4"
+                className="w-full border-2 border-[var(--color-border)] bg-[var(--color-card)] rounded-xl px-3 py-2.5 text-sm resize-none outline-none focus:border-[var(--color-primary)] transition-colors mb-3"
               />
+
+              {!requiresApproval && (
+                <label className="flex items-center gap-3 cursor-pointer bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 mb-4">
+                  <input
+                    type="checkbox"
+                    checked={isPrivate}
+                    onChange={e => setIsPrivate(e.target.checked)}
+                    className="w-4 h-4 accent-purple-600"
+                  />
+                  <div>
+                    <div className="text-xs font-extrabold text-gray-700">🔒 비밀글로 올리기</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">나와 관리자만 볼 수 있어요</div>
+                  </div>
+                </label>
+              )}
 
               {error && (
                 <p className="text-[var(--color-danger)] text-xs mb-3 text-center bg-red-50 rounded-xl p-2 border border-red-200">
