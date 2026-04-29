@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { Pet } from "@/types";
+import PixelPet, { type PetAnim, getAutoAnim } from "@/components/tamagotchi/PixelPet";
 import TamagotchiDisplay from "@/components/tamagotchi/TamagotchiDisplay";
 import { useCareItem } from "@/lib/actions";
 import { getIdleMessage, getActionMessage, getTapMessage, type CareAction } from "@/lib/petMessages";
@@ -32,12 +33,20 @@ export default function PetInteraction({ pet, care }: Props) {
   const [bubble, setBubble] = useState(() => getIdleMessage(pet));
   const [particles, setParticles] = useState<Particle[]>([]);
   const [loadingKey, setLoadingKey] = useState<keyof Props["care"] | null>(null);
+  const [anim, setAnim] = useState<PetAnim>(() => getAutoAnim(pet));
+  const [usePixel, setUsePixel] = useState(true);
   const [, startTransition] = useTransition();
+
+  function playAnim(a: PetAnim, durationMs: number) {
+    setAnim(a);
+    setTimeout(() => setAnim(getAutoAnim(pet)), durationMs);
+  }
 
   function handleCare(key: keyof Props["care"], action: CareAction, itemId: string) {
     if (loadingKey) return;
     setLoadingKey(key);
     setBubble(getActionMessage(action));
+    playAnim("happy", 2000);
     startTransition(async () => {
       try {
         await useCareItem(itemId);
@@ -52,6 +61,7 @@ export default function PetInteraction({ pet, care }: Props) {
 
   function handlePetTap() {
     setBubble(getTapMessage(pet));
+    playAnim("tap", 600);
 
     const pool = TAP_EMOJIS[pet.stage];
     const newParticles: Particle[] = Array.from({ length: 5 }, (_, i) => ({
@@ -82,7 +92,10 @@ export default function PetInteraction({ pet, care }: Props) {
 
       {/* 펫 + 파티클 */}
       <div className="relative flex items-center justify-center">
-        <TamagotchiDisplay pet={pet} onClick={handlePetTap} />
+        {usePixel
+          ? <PixelPet pet={pet} anim={anim} onClick={handlePetTap} onMissing={() => setUsePixel(false)} />
+          : <TamagotchiDisplay pet={pet} onClick={handlePetTap} />
+        }
         {particles.map(p => (
           <span
             key={p.id}
