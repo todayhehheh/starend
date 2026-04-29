@@ -5,24 +5,27 @@ import type { Pet } from "@/types";
 
 export type PetAnim = "idle" | "happy" | "sad" | "tap" | "sleep";
 
-const FRAME_SIZE = 32;   // px per frame in the sprite sheet
-const DISPLAY_SCALE = 5; // 32 × 5 = 160px on screen
-const FRAME_COUNT = 5;
+// 5×5px 프레임을 32배 확대 → 160×160px 표시
+const FRAME_PX = 5;
+const SCALE    = 32;
+const DISPLAY  = FRAME_PX * SCALE; // 160
 
-const ANIM_ROW: Record<PetAnim, number> = {
-  idle:  0,
-  happy: 1,
-  sad:   2,
-  tap:   3,
+// 애니메이션별 프레임 수 (Piskel에서 만든 프레임 수와 일치시킬 것)
+const FRAMES: Record<PetAnim, number> = {
+  idle:  4,
+  happy: 4,
+  sad:   4,
+  tap:   4,
   sleep: 4,
 };
 
-const ANIM_MS: Record<PetAnim, number> = {
-  idle:  220,
-  happy: 100,
-  sad:   320,
-  tap:    80,
-  sleep: 450,
+// 프레임 전환 속도 (ms)
+const SPEED: Record<PetAnim, number> = {
+  idle:  260,
+  happy: 110,
+  sad:   340,
+  tap:    90,
+  sleep: 480,
 };
 
 export function getAutoAnim(pet: Pet): PetAnim {
@@ -40,47 +43,44 @@ interface Props {
 
 export default function PixelPet({ pet, anim, onClick, onMissing }: Props) {
   const [frame, setFrame] = useState(0);
-  const [hasSprite, setHasSprite] = useState(true);
   const currentAnim = anim ?? getAutoAnim(pet);
-  const displaySize = FRAME_SIZE * DISPLAY_SCALE;
-  const spriteUrl = `/sprites/stage${pet.stage}.png`;
+  const spriteUrl = `/sprites/stage${pet.stage}_${currentAnim}.png`;
+  const frameCount = FRAMES[currentAnim];
 
+  // 애니메이션 전환 시 프레임 리셋
   useEffect(() => {
     setFrame(0);
     const id = setInterval(
-      () => setFrame(f => (f + 1) % FRAME_COUNT),
-      ANIM_MS[currentAnim],
+      () => setFrame(f => (f + 1) % frameCount),
+      SPEED[currentAnim],
     );
     return () => clearInterval(id);
-  }, [currentAnim]);
+  }, [currentAnim, frameCount]);
 
-  if (!hasSprite) return null;
-
-  const bgX = -(frame * displaySize);
-  const bgY = -(ANIM_ROW[currentAnim] * displaySize);
-  const totalCols = FRAME_COUNT;
-  const totalRows = Object.keys(ANIM_ROW).length;
+  // 스트립 가로: 프레임 수 × 160px, 세로: 160px (1행)
+  const bgX = -(frame * DISPLAY);
 
   return (
     <div
       role={onClick ? "button" : undefined}
       onClick={onClick}
       style={{
-        width: displaySize,
-        height: displaySize,
-        backgroundImage: `url(${spriteUrl})`,
-        backgroundSize: `${totalCols * displaySize}px ${totalRows * displaySize}px`,
-        backgroundPosition: `${bgX}px ${bgY}px`,
-        imageRendering: "pixelated",
-        cursor: onClick ? "pointer" : "default",
-        flexShrink: 0,
+        width:              DISPLAY,
+        height:             DISPLAY,
+        backgroundImage:    `url(${spriteUrl})`,
+        backgroundSize:     `${frameCount * DISPLAY}px ${DISPLAY}px`,
+        backgroundPosition: `${bgX}px 0px`,
+        imageRendering:     "pixelated",
+        cursor:             onClick ? "pointer" : "default",
+        flexShrink:         0,
       }}
     >
+      {/* PNG 로드 실패 시 폴백 트리거 */}
       <img
         src={spriteUrl}
         alt=""
         className="hidden"
-        onError={() => { setHasSprite(false); onMissing?.(); }}
+        onError={() => { onMissing?.(); }}
       />
     </div>
   );
