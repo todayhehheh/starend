@@ -36,7 +36,7 @@ export default async function HomePage() {
     { count: checkedInToday },
     { data: weekLogs },
   ] = await Promise.all([
-    supabase.from("profiles").select("nickname, coins, role, created_at, tutorial_step").eq("id", user.id).single(),
+    supabase.from("profiles").select("nickname, coins, role, created_at").eq("id", user.id).single(),
     supabase.from("pets").select("*").eq("user_id", user.id).single(),
     supabase.from("mission_logs")
       .select("*", { count: "exact", head: true })
@@ -91,6 +91,11 @@ export default async function HomePage() {
   const streak = calcStreak(activeDates);
   const programDone = weekNum >= 4 && typedPet.stage === 3;
 
+  // tutorial_step은 마이그레이션 후 컬럼이 생기면 별도 조회 — 없으면 인트로 비표시
+  const { data: tutorialData } = await supabase
+    .from("profiles").select("tutorial_step").eq("id", user.id).single();
+  const showIntro = (tutorialData as { tutorial_step?: number } | null)?.tutorial_step === 0;
+
   return (
     <HomeClient
       profile={typedProfile}
@@ -102,7 +107,7 @@ export default async function HomePage() {
       completedToday={completedToday ?? 0}
       checkedInToday={(checkedInToday ?? 0) > 0}
       programDone={programDone}
-      showIntro={(profile as { tutorial_step?: number }).tutorial_step === 0}
+      showIntro={showIntro}
     />
   );
 }
