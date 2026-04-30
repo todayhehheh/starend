@@ -8,6 +8,7 @@ import WeekStrip from "@/components/home/WeekStrip";
 import MoodCheckin from "@/components/home/MoodCheckin";
 import CoinDisplay from "@/components/ui/CoinDisplay";
 import EvolutionOverlay from "@/components/tamagotchi/EvolutionOverlay";
+import StorySlide from "@/components/home/StorySlide";
 import { getStatColor } from "@/lib/pet";
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
   completedToday: number;
   checkedInToday: boolean;
   programDone: boolean;
+  showIntro: boolean;
 }
 
 function MiniStat({ emoji, value }: { emoji: string; value: number }) {
@@ -37,7 +39,7 @@ function MiniStat({ emoji, value }: { emoji: string; value: number }) {
 
 export default function HomeClient({
   profile, pet, care, weekNum, activeDates, streak,
-  completedToday, checkedInToday, programDone,
+  completedToday, checkedInToday, programDone, showIntro,
 }: Props) {
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [showAttendance, setShowAttendance] = useState(false);
@@ -62,6 +64,8 @@ export default function HomeClient({
   }, [checkedInToday]);
 
   return (
+    <>
+    {showIntro && <StorySlide petName={pet.name} />}
     <div
       className="flex flex-col"
       style={{ minHeight: "calc(100vh - 64px)", background: "radial-gradient(ellipse at 50% 20%, #1e0a3c 0%, #07050f 70%)" }}
@@ -218,5 +222,6 @@ export default function HomeClient({
         </>
       )}
     </div>
+    </>
   );
 }

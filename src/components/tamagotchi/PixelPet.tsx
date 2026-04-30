@@ -13,13 +13,14 @@ const TOTAL_FRAMES = COLS * ROWS; // 25
 // 화면 표시 크기 (px) — 프레임 1개 기준
 const DISPLAY = 160;
 
-// 애니메이션별 프레임 전환 속도 (ms)
+// 프레임 전환 속도 (ms) — 25프레임 기준 1사이클 시간
+// idle 80ms × 25 = 2초, happy 40ms × 25 = 1초
 const SPEED: Record<PetAnim, number> = {
-  idle:  260,
-  happy: 110,
-  sad:   340,
-  tap:    90,
-  sleep: 480,
+  idle:  160,
+  happy:  80,
+  sad:   200,
+  tap:    60,
+  sleep: 240,
 };
 
 export function getAutoAnim(pet: Pet): PetAnim {

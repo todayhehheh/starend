@@ -135,6 +135,14 @@ export async function useCareItem(itemId: string) {
   return result;
 }
 
+export async function completeTutorial() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from("profiles").update({ tutorial_step: 1 }).eq("id", user.id);
+  revalidatePath("/");
+}
+
 export async function submitMoodCheckin(mood: number) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("submit_mood_checkin", { p_mood: mood });

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import FeedItem from "@/components/feed/FeedItem";
+import { getTodayRange } from "@/lib/date";
 import type { FeedLog } from "@/types";
 
 export default async function FeedPage() {
@@ -12,8 +13,9 @@ export default async function FeedPage() {
     .from("profiles").select("role, is_isolated").eq("id", user.id).single();
   const isManager = profile?.role === "manager";
   const isIsolated = profile?.is_isolated ?? false;
+  const { todayStart, tomorrowStart } = getTodayRange();
 
-  const { data: logs } = await supabase
+  const query = supabase
     .from("mission_logs")
     .select(`
       id, content, photo_url, coins_earned, created_at, user_id, is_private,
@@ -24,6 +26,13 @@ export default async function FeedPage() {
     .not("photo_url", "is", null)
     .order("created_at", { ascending: false })
     .limit(50);
+
+  // 청소년은 당일치 피드만, 관리자는 전체
+  if (!isManager) {
+    query.gte("created_at", todayStart).lt("created_at", tomorrowStart);
+  }
+
+  const { data: logs } = await query;
 
   type RawLog = typeof logs extends (infer T)[] | null ? T : never;
   type LogProfile = { nickname: string; role: string; is_isolated: boolean } | null;
@@ -42,7 +51,7 @@ export default async function FeedPage() {
       <header className="mb-6">
         <h1 className="text-lg font-extrabold text-[var(--color-primary)]">인증 피드</h1>
         <p className="text-xs text-[var(--color-muted)] mt-1">
-          {isIsolated ? "나의 기록 ✨" : "모두의 오늘 기록 ✨"}
+          {isIsolated ? "나의 오늘 기록 ✨" : "오늘의 인증 피드 ✨"}
         </p>
       </header>
 
